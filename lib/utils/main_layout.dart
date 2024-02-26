@@ -1,6 +1,6 @@
-import 'package:dubz_creator/screens/discount_page.dart';
-import 'package:dubz_creator/screens/home_page.dart';
-import 'package:dubz_creator/screens/booking_page.dart';
+import 'package:dubz_creator/restaurantscreens/discount_page.dart';
+import 'package:dubz_creator/restaurantscreens/home_page.dart';
+import 'package:dubz_creator/restaurantscreens/booking_page.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
 

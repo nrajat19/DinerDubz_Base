@@ -1,11 +1,24 @@
 import 'package:dubz_creator/utils/config.dart';
 import 'package:dubz_creator/utils/main_layout.dart';
-import 'package:dubz_creator/screens/discount_page.dart';
-import 'package:dubz_creator/screens/home_page.dart';
+import 'package:dubz_creator/restaurantscreens/discount_page.dart';
+import 'package:dubz_creator/restaurantscreens/home_page.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:dubz_creator/loginscreen/signin_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: FirebaseOptions(
+      apiKey: "AIzaSyBpHoQDyT7afa7PG_Xn9RgMLMYhZA_HbUE", 
+      appId: "1:733362896359:web:3d5baa13da338a39941142", 
+      messagingSenderId: "733362896359", 
+      projectId: "dubz-restaurant"
+    )
+  );
+  runApp(MaterialApp(
+    home: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -44,7 +57,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         //'/': (context) => const HomePage(),
-        '/': (context) => const MainLayout(),
+        '/': (context) => const SignInScreen(),
       },
     );
   } 

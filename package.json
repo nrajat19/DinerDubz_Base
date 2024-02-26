@@ -1,0 +1,28 @@
+{
+  "name": "DinerDubz_Base",
+  "version": "1.0.0",
+  "description": "A new Flutter project.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "dependencies": {
+    "firebase": "^10.8.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nrajat19/DinerDubz_Base.git"
+  },
+  "keywords": [],
+  "author": "Rajat Nilakhe",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nrajat19/DinerDubz_Base/issues"
+  },
+  "homepage": "https://github.com/nrajat19/DinerDubz_Base#readme"
+}
