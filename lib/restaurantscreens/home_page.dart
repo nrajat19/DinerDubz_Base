@@ -1,8 +1,12 @@
 import 'package:dubz_creator/components/dubz_card.dart';
 import 'package:dubz_creator/utils/config.dart';
 import 'package:flutter/material.dart';
+import 'package:dubz_creator/loginscreen/signin_screen.dart';
 import 'package:dubz_creator/restaurantscreens/dubzverify_page.dart';
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -31,10 +35,33 @@ class _HomePageState extends State<HomePage> {
 
   int _currentIndex = 0;
   late Timer _timer;
+  String? userName;
 
-  @override 
+  Future<void> fetchUserData() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      try {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+
+        if (userDoc.exists) {
+          setState(() {
+            userName = userDoc['userName']; // Assuming 'userName' is the field in Firestore
+          });
+        }
+      } catch (e) {
+        // Handle errors here
+        print('Error fetching user data: $e');
+      }
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
+    fetchUserData();
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       setState(() {
         _currentIndex = (_currentIndex + 1) % 3;
@@ -76,23 +103,32 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Row(
+                  Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     Text(
-                      'SuperUser',
-                      style: TextStyle(
+                      userName ?? "",
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(
-                      child: CircleAvatar(
-                        radius: 30,
-                        // backgroundImage: AssetImage(
-                        //     "filename for image"), //insert image here
-                      ),
-                    )
+                    ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Config.primaryColor,
+                    ),
+                    child: const Text(
+                      'Logout',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (context) => SignInScreen()),
+                      );                  
+                    },
+                  ),
+
                   ],
                 ),
                 Config.spaceMedium,

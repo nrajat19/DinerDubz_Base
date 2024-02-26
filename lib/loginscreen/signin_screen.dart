@@ -18,6 +18,8 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   TextEditingController _passwordTextController = TextEditingController();
   TextEditingController _emailTextController = TextEditingController();
+  String _errorMessage = '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,7 +38,7 @@ class _SignInScreenState extends State<SignInScreen> {
           const SizedBox(
             height: 30,
           ),
-          reusableTextField("Enter UserName", Icons.person_outline, false,
+          reusableTextField("Enter Email Address", Icons.mail, false,
               _emailTextController),
           const SizedBox(
             height: 20,
@@ -47,21 +49,38 @@ class _SignInScreenState extends State<SignInScreen> {
             height: 20,
           ),
 
+          if (_errorMessage.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                "Invalid Email/Password Entered",
+                style: TextStyle(color: Colors.red, fontSize: 14),
+              ),
+            ),
+
           forgetPassword(context),
 
           firebaseUIButton(context, "Sign In", () {
-                  FirebaseAuth.instance
-                      .signInWithEmailAndPassword(
-                          email: _emailTextController.text,
-                          password: _passwordTextController.text)
-                      .then((value) {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => HomeScreen()));
-                  }).onError((error, stackTrace) {
-                    print("Error ${error.toString()}");
+            FirebaseAuth.instance
+                .signInWithEmailAndPassword(
+                    email: _emailTextController.text,
+                    password: _passwordTextController.text)
+                .then((value) {
+                  // Clear any previous error message
+                  setState(() {
+                    _errorMessage = '';
                   });
-                }),
-          signUpOption()
+
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+                }).catchError((error) {
+                  // Set the error message based on the error
+                  setState(() {
+                    _errorMessage = error.message; // Assuming error object has 'message' field
+                  });
+                });
+          }),
+
+          signUpOption(),
         ]),
       )),
     ));

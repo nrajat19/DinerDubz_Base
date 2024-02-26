@@ -4,6 +4,7 @@ import 'package:dubz_creator/reusable_widgets/reusable_widget.dart';
 import 'package:dubz_creator/utils/color_utils.dart';
 import 'package:dubz_creator/utils/config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -47,7 +48,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(
                   height: 20,
                 ),
-                reusableTextField("Enter Email Id", Icons.person_outline, false,
+                reusableTextField("Enter Email Id", Icons.mail, false,
                     _emailTextController),
                 const SizedBox(
                   height: 20,
@@ -57,15 +58,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(
                   height: 20,
                 ),
+
                 firebaseUIButton(context, "Sign Up", () {
                   FirebaseAuth.instance
                       .createUserWithEmailAndPassword(
                           email: _emailTextController.text,
-                          password: _passwordTextController.text)
+                          password: _passwordTextController.text
+                          
+                          //approved: True/False
+                          )
                       .then((value) {
-                    print("Created New Account");
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => HomeScreen()));
+                    // Get the UID of the newly created user
+                    String uid = value.user!.uid;
+
+                    // Store additional user details in Firestore
+                    FirebaseFirestore.instance.collection('users').doc(uid).set({
+                      'userName': _userNameTextController.text,
+                      'email': _emailTextController.text,
+                      // Add other fields as needed
+                    }).then((_) {
+                      print("User details added to Firestore");
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+                    }).catchError((error) {
+                      print("Error adding user details to Firestore: $error");
+                    });
+
                   }).onError((error, stackTrace) {
                     print("Error ${error.toString()}");
                   });
