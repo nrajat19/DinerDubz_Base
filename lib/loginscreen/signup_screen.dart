@@ -17,6 +17,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   TextEditingController _passwordTextController = TextEditingController();
   TextEditingController _emailTextController = TextEditingController();
   TextEditingController _userNameTextController = TextEditingController();
+  bool isRestaurant = false; // false for Customer, true for Restaurant
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,37 +61,96 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   height: 20,
                 ),
 
+                const SizedBox(
+                  height: 20,
+                ),
+                buildToggleSwitch(),
+                const SizedBox(
+                  height: 20,
+                ),
+
                 firebaseUIButton(context, "Sign Up", () {
                   FirebaseAuth.instance
                       .createUserWithEmailAndPassword(
                           email: _emailTextController.text,
-                          password: _passwordTextController.text
-                          
-                          //approved: True/False
-                          )
+                          password: _passwordTextController.text)
                       .then((value) {
-                    // Get the UID of the newly created user
-                    String uid = value.user!.uid;
+                        // Get the UID of the newly created user
+                        String uid = value.user!.uid;
 
-                    // Store additional user details in Firestore
-                    FirebaseFirestore.instance.collection('users').doc(uid).set({
-                      'userName': _userNameTextController.text,
-                      'email': _emailTextController.text,
-                      // Add other fields as needed
-                    }).then((_) {
-                      print("User details added to Firestore");
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
-                    }).catchError((error) {
-                      print("Error adding user details to Firestore: $error");
-                    });
+                        // Determine the collection based on user type
+                        String collectionName = isRestaurant ? 'restaurant' : 'diner';
 
-                  }).onError((error, stackTrace) {
-                    print("Error ${error.toString()}");
-                  });
+                        // Store additional user details in Firestore
+                        FirebaseFirestore.instance.collection(collectionName).doc(uid).set({
+                          'userName': _userNameTextController.text,
+                          'email': _emailTextController.text,
+                          // Add other fields as needed
+                        }).then((_) {
+                          print("User details added to Firestore");
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+                        }).catchError((error) {
+                          print("Error adding user details to Firestore: $error");
+                        });
+
+                      }).onError((error, stackTrace) {
+                        print("Error ${error.toString()}");
+                      });
                 })
               ],
             ),
           ))),
     );
   }
+
+  Widget buildToggleSwitch() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Customer Text
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              isRestaurant = false;
+            });
+          },
+          child: Text(
+            "Diner",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isRestaurant ? Colors.grey : Colors.white,
+            ),
+          ),
+        ),
+        SizedBox(width: 10),
+        // Switch Icon - Can be customized further
+        Text(
+            "|",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        SizedBox(width: 10),
+        // Restaurant Text
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              isRestaurant = true;
+            });
+          },
+          child: Text(
+            "Restaurant",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isRestaurant ? Colors.white : Colors.grey,
+            ),
+          ),
+        ),
+      ],
+    );
+  }  
 }
