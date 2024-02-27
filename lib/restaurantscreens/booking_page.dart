@@ -1,13 +1,11 @@
 import 'package:dubz_creator/components/button_widget.dart';
-import 'package:dubz_creator/components/date_picker_widget.dart';
-import 'package:dubz_creator/components/date_range_picker_widget.dart';
-import 'package:dubz_creator/components/datetime_picker_widget.dart';
-import 'package:dubz_creator/components/time_picker_widget.dart';
-import 'package:dubz_creator/utils/main_layout.dart';
 import 'package:dubz_creator/utils/config.dart';
-import 'package:dubz_creator/restaurantscreens/discount_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class BookingPage extends StatefulWidget {
   const BookingPage({Key? key}) : super(key: key);
@@ -18,6 +16,74 @@ class BookingPage extends StatefulWidget {
 
 class _BookingPageState extends State<BookingPage> {
   var index = -1;
+  TextEditingController descriptionController = TextEditingController();
+  TextEditingController quantityController = TextEditingController();
+  DateTime? startDate;
+  DateTime? endDate;
+  final GlobalKey<_DatetimePickerWidgetState> startPickerKey = GlobalKey();
+  final GlobalKey<_DatetimePickerWidgetState> endPickerKey = GlobalKey();
+  String generateUniqueId() {
+      Random random = Random();
+      int number = random.nextInt(900000) + 100000; // This will generate a random number between 100000 and 999999
+      return number.toString();
+  }
+
+  void handleSubmit() async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    DateTime initDate = DateTime.now();
+
+    int quantity = int.tryParse(quantityController.text) ?? 0;
+    for (int i = 0; i < quantity; i++) {
+      // Generate a unique ID for each document
+      String uniqueId = generateUniqueId();
+
+      // Prepare data for Firestore
+      Map<String, dynamic> discountData = {
+        'description': descriptionController.text,
+        'type': index,
+        'startDate': startDate,
+        'endDate': endDate,
+        'uniqueId': uniqueId,
+      };
+
+      // Create a new document for each discount
+      await firestore.collection('restaurant')
+                     .doc(userId)
+                     .collection('discounts')
+                     .doc(uniqueId) // Using uniqueId as document ID
+                     .set(discountData)
+                     .then((value) => print("Discount Added"))
+                     .catchError((error) => print("Failed to add discount: $error"));
+    }
+
+    // Clear fields after submission
+    descriptionController.clear();
+    quantityController.clear();
+    startPickerKey.currentState?.resetDateTime();
+    endPickerKey.currentState?.resetDateTime();
+    
+    setState(() {
+      index = -1;
+      startDate = initDate;
+      endDate = initDate;
+    });
+  }
+
+
+  void handleStartDateChanged(DateTime selectedDate) {
+    setState(() {
+      startDate = selectedDate;
+    });
+  }
+
+  // Function to update the end date
+  void handleEndDateChanged(DateTime selectedDate) {
+    setState(() {
+      endDate = selectedDate;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -43,8 +109,9 @@ class _BookingPageState extends State<BookingPage> {
                   child: SizedBox(
                     height: 50,
                     width: Config.widthSize * 0.6,
-                    child: const TextField(
-                      decoration: InputDecoration(
+                    child: TextField(
+                      controller: descriptionController,
+                      decoration: const InputDecoration(
                           labelText:
                               "Dubz Title/Description"), // Only numbers can be entered
                     ),
@@ -119,11 +186,15 @@ class _BookingPageState extends State<BookingPage> {
                 Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      DatetimePickerWidget(),
-                      const SizedBox(
-                        width: 20,
+                      DatetimePickerWidget(
+                        key: startPickerKey,
+                        onDateTimeChanged: handleStartDateChanged,
                       ),
-                      DatetimePickerWidget(),
+                      const SizedBox(width: 20),
+                      DatetimePickerWidget(
+                        key: endPickerKey,
+                        onDateTimeChanged: handleEndDateChanged,
+                      ),
                     ],
                 ),
 
@@ -133,8 +204,9 @@ class _BookingPageState extends State<BookingPage> {
                     height: 50,
                     width: Config.widthSize * 0.6,
                     child: TextField(
+                      controller: quantityController,
                       decoration:
-                          InputDecoration(labelText: "Enter Dubz Quantity"),
+                          const InputDecoration(labelText: "Enter Dubz Quantity"),
                       keyboardType: TextInputType.number,
                       inputFormatters: <TextInputFormatter>[
                         FilteringTextInputFormatter.digitsOnly
@@ -154,8 +226,7 @@ class _BookingPageState extends State<BookingPage> {
                       'Submit Dubz',
                       style: TextStyle(fontSize: 18, color: Colors.black),
                     ),
-                    onPressed: () {                
-                    },
+                    onPressed: handleSubmit,
                   ),
                 ),
               ],
@@ -166,201 +237,95 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 }
-/** 
+
+class DatetimePickerWidget extends StatefulWidget {
+  final Function(DateTime) onDateTimeChanged;
+  final GlobalKey<_DatetimePickerWidgetState> key;
+
+  DatetimePickerWidget({
+    required this.onDateTimeChanged,
+    required this.key,
+  }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        bottomNavigationBar: buildBottomBar(),
-        body: buildPages(),
-      );
+  _DatetimePickerWidgetState createState() => _DatetimePickerWidgetState();
+}
 
-  Widget buildBottomBar() {
-    final style = TextStyle(color: Colors.white);
 
-    return BottomNavigationBar(
-      backgroundColor: Theme.of(context).primaryColor,
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.white70,
-      currentIndex: index,
-      items: [
-        BottomNavigationBarItem(
-          icon: Text('DatePicker', style: style),
-          label: ('Basic'),
-        ),
-        BottomNavigationBarItem(
-          icon: Text('DatePicker', style: style),
-          label: ('Advanced'),
-        ),
-      ],
-      onTap: (int index) => setState(() => this.index = index),
-    );
+class _DatetimePickerWidgetState extends State<DatetimePickerWidget> {
+  late DateTime dateTime;
+  DateTime initDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    dateTime = initDate; // Initialize date in initState
   }
 
-  Widget buildPages() {
-    switch (index) {
-      case 0:
-        return Scaffold(
-          backgroundColor: Colors.lightBlue,
-          body: Padding(
-            padding: EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                DatePickerWidget(),
-                const SizedBox(height: 24),
-                TimePickerWidget(),
-                const SizedBox(height: 24),
-                DateRangePickerWidget(),
-              ],
-            ),
-          ),
-        );
-      case 1:
-        return Scaffold(
-          backgroundColor: Colors.lightBlue,
-          body: Padding(
-            padding: EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                DatetimePickerWidget(),
-              ],
-            ),
-          ),
-        );
-      default:
-        return Container();
+  void resetDateTime() {
+    setState(() {
+      dateTime = initDate;
+    });
+  }
+
+  String getText() {
+    if (dateTime == initDate) {
+      return 'Select DateTime';
+    } else {
+      return DateFormat('MM/dd/yyyy HH:mm').format(dateTime);
     }
   }
-  */
 
-/**
-class _BookingPageState extends State<BookingPage> {
-  CalendarFormat _format = CalendarFormat.month;
-  DateTime _focusDay = DateTime.now();
-  DateTime _currentDay = DateTime.now();
-  int? _currentIndex;
-  bool _isWeekend = false;
-  bool _dateSelected = false;
-  bool _timeSelected = false;
-
-  
   @override
-  Widget build(BuildContext context) {
-    Config().init(context);
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: <Widget>[
-          SliverToBoxAdapter(
-            child: Column(
-              children: <Widget>[
-                const Text(
-                  'Book Your Dubz',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 24,
-                  ),
-                ),
-                _tableCalendar(),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 25),
-                  child: Center(
-                    child: Text(
-                      'Select Discount Time',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                )
-              ],
-            ),
-          ),
-          SliverGrid(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              return InkWell(
-                splashColor: Colors.transparent,
-                onTap: () {
-                  setState (() {
-                    _currentIndex = index;
-                    _timeSelected = true;
-                  });
-                },
-                child: Container(
-                  margin: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: _currentIndex == index
-                        ? Colors.white
-                        : Colors.black
-                    ),
-                    borderRadius: BorderRadius.circular(15),
-                    color: _currentIndex == index
-                      ? Config.primaryColor
-                      : null,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '${index + 9}:00 ${index + 9 > 11 ? "PM" : "AM"}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: _currentIndex == index ? Colors.white : null,
-                    ),
-                  ),
-                ),
-              );
-            },
-            childCount: 8,
-            ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4, childAspectRatio: 1.5),
-          ),
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 80),
-              child: Button(
-                width: double.infinity,
-                title: "Upload Discount",
-                onPressed: () {},
-                disable: _timeSelected && _dateSelected ? false : true,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  Widget build(BuildContext context) => ButtonWidget(
+        text: getText(),
+        onClicked: () => pickDateTime(context),
+      );
+
+  Future pickDateTime(BuildContext context) async {
+    final date = await pickDate(context);
+    if (date == null) return;
+
+    final time = await pickTime(context);
+    if (time == null) return;
+
+    setState(() {
+      dateTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+      widget.onDateTimeChanged(dateTime);
+    });
   }
 
-  Widget _tableCalendar() {
-    return TableCalendar(
-      focusedDay: _focusDay,
-      firstDay: DateTime.now(),
-      lastDay: DateTime(2025, 1, 1),
-      calendarFormat: _format,
-      currentDay: _currentDay,
-      rowHeight: 48,
-      calendarStyle: const CalendarStyle(
-        todayDecoration:
-            BoxDecoration(color: Config.primaryColor, shape: BoxShape.circle),
-      ),
-      availableCalendarFormats: const {
-        CalendarFormat.month: 'Month',
-      },
-      onFormatChanged: (format) {
-        setState(() {
-          _format = format;
-        });
-      },
-      onDaySelected: ((selectedDay, focusedDay) {
-        setState(() {
-          _currentDay = selectedDay;
-          _focusDay = focusedDay;
-          _dateSelected = true;
-        });
-      }),
+  Future<DateTime?> pickDate(BuildContext context) async {
+    final initialDate = DateTime.now();
+    final newDate = await showDatePicker(
+      context: context,
+      initialDate: dateTime ?? initialDate,
+      firstDate: DateTime(DateTime.now().year - 5),
+      lastDate: DateTime(DateTime.now().year + 5),
     );
+
+    if (newDate == null) return null;
+
+    return newDate;
+  }
+
+  Future<TimeOfDay?> pickTime(BuildContext context) async {
+    final initialTime = TimeOfDay(hour: 9, minute: 0);
+    final newTime = await showTimePicker(
+      context: context,
+      initialTime: dateTime != initDate
+          ? TimeOfDay(hour: dateTime.hour, minute: dateTime.minute)
+          : initialTime,
+    );
+
+    if (newTime == null) return null;
+
+    return newTime;
   }
 }
-
-*/

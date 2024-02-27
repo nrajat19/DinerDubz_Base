@@ -42,7 +42,7 @@ class _HomePageState extends State<HomePage> {
     if (currentUser != null) {
       try {
         DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
+            .collection('restaurant')
             .doc(currentUser.uid)
             .get();
 

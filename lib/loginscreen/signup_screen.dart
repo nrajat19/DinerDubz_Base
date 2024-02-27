@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dubz_creator/loginscreen/home_screen.dart';
 import 'package:dubz_creator/reusable_widgets/reusable_widget.dart';
 import 'package:dubz_creator/utils/color_utils.dart';
+import 'package:dubz_creator/utils/main_layout.dart';
 import 'package:dubz_creator/utils/config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -18,7 +19,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   TextEditingController _emailTextController = TextEditingController();
   TextEditingController _userNameTextController = TextEditingController();
   bool isRestaurant = false; // false for Customer, true for Restaurant
-
+  String _errorMessage = '';
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,6 +71,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   height: 20,
                 ),
 
+                if (_errorMessage.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      _errorMessage,
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+
                 firebaseUIButton(context, "Sign Up", () {
                   FirebaseAuth.instance
                       .createUserWithEmailAndPassword(
@@ -88,15 +99,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           // Add other fields as needed
                         }).then((_) {
                           print("User details added to Firestore");
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+
+                          // Navigate to different screens based on user type
+                          if (isRestaurant) {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => MainLayout()));
+                          } else {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+                          }
                         }).catchError((error) {
                           print("Error adding user details to Firestore: $error");
                         });
 
-                      }).onError((error, stackTrace) {
-                        print("Error ${error.toString()}");
+                      }).catchError((error) {
+                        String errorText = "UserID/Email Already Registered";
+                        if (error is FirebaseAuthException) {
+                          if (error.code == 'email-already-in-use') {
+                            errorText = "Email already registered";
+                          }
+                          // You can handle other specific errors if needed
+                        }
+                        setState(() {
+                          _errorMessage = errorText;
+                        });
                       });
                 })
+
               ],
             ),
           ))),

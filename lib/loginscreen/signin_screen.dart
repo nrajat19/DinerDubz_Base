@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:dubz_creator/loginscreen/home_screen.dart';
 import 'package:dubz_creator/loginscreen/signup_screen.dart';
 import 'package:dubz_creator/loginscreen/reset_password.dart';
 import 'package:dubz_creator/reusable_widgets/reusable_widget.dart';
 import 'package:dubz_creator/utils/color_utils.dart';
+import 'package:dubz_creator/utils/main_layout.dart';
 import 'package:dubz_creator/utils/config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -71,7 +73,8 @@ class _SignInScreenState extends State<SignInScreen> {
                     _errorMessage = '';
                   });
 
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+                  // Check user type in Firestore
+                  checkUserTypeAndNavigate(value.user!.uid, context);
                 }).catchError((error) {
                   // Set the error message based on the error
                   setState(() {
@@ -84,6 +87,22 @@ class _SignInScreenState extends State<SignInScreen> {
         ]),
       )),
     ));
+  }
+
+  void checkUserTypeAndNavigate(String userId, BuildContext context) {
+      // Assuming 'restaurant' collection contains documents with user IDs as document IDs
+      FirebaseFirestore.instance.collection('restaurant').doc(userId).get().then((docSnapshot) {
+        if (docSnapshot.exists) {
+          // User is a restaurant
+          Navigator.push(context, MaterialPageRoute(builder: (context) => MainLayout()));
+        } else {
+          // User is not a restaurant, hence a diner
+          Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+        }
+      }).catchError((error) {
+        // Handle errors, e.g., show an error message
+        print("Error checking user type: $error");
+      });
   }
 
   Row signUpOption() {

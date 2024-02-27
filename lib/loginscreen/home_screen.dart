@@ -15,10 +15,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Center(
         child: ElevatedButton(
-          child: Text("Restaurant Side"),
+          child: Text("Diner Side"),
           onPressed: () {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => MainLayout()));
           },
         ),
       ),
