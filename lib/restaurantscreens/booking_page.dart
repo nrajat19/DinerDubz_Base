@@ -18,6 +18,7 @@ class _BookingPageState extends State<BookingPage> {
   var index = -1;
   TextEditingController descriptionController = TextEditingController();
   TextEditingController quantityController = TextEditingController();
+  bool verifiedController = false;
   DateTime? startDate;
   DateTime? endDate;
   final GlobalKey<_DatetimePickerWidgetState> startPickerKey = GlobalKey();
@@ -32,6 +33,7 @@ class _BookingPageState extends State<BookingPage> {
     String userId = FirebaseAuth.instance.currentUser!.uid;
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     DateTime initDate = DateTime.now();
+    
 
     int quantity = int.tryParse(quantityController.text) ?? 0;
     for (int i = 0; i < quantity; i++) {
@@ -39,21 +41,36 @@ class _BookingPageState extends State<BookingPage> {
       String uniqueId = generateUniqueId();
 
       // Prepare data for Firestore
-      Map<String, dynamic> discountData = {
+      Map<String, dynamic> discountSetData = {
         'description': descriptionController.text,
         'type': index,
         'startDate': startDate,
         'endDate': endDate,
-        'uniqueId': uniqueId,
+        'quantity' : quantityController.text, 
       };
+
+      Map<String, dynamic> discountData = {
+        'uniqueId': uniqueId,
+        'verified': verifiedController,
+      };
+
+      await firestore.collection('restaurant')
+                     .doc(userId)
+                     .collection('discount_groups')
+                     .doc(descriptionController.text) // Using uniqueId as document ID
+                     .set(discountSetData)
+                     .then((value) => print("Discount Set Added"))
+                     .catchError((error) => print("Failed to add discount: $error"));
 
       // Create a new document for each discount
       await firestore.collection('restaurant')
                      .doc(userId)
-                     .collection('discounts')
-                     .doc(uniqueId) // Using uniqueId as document ID
+                     .collection('discount_groups')
+                     .doc(descriptionController.text) // Using uniqueId as document ID
+                     .collection("discounts")
+                     .doc(uniqueId)
                      .set(discountData)
-                     .then((value) => print("Discount Added"))
+                     .then((value) => print("Discount IDs Added"))
                      .catchError((error) => print("Failed to add discount: $error"));
     }
 
@@ -130,22 +147,22 @@ class _BookingPageState extends State<BookingPage> {
                       ),
                       value: index == -1 ? null : index,
                       hint: const Text('Select Dubz Type'),
-                      items: [
+                      items: const [
                         DropdownMenuItem(
-                          child: Text('Promotion'),
                           value: 1,
+                          child: Text('Promotion'),
                         ),
                         DropdownMenuItem(
-                          child: Text('Discount'),
                           value: 2,
+                          child: Text('Discount'),
                         ),
                         DropdownMenuItem(
-                          child: Text('Price Drop'),
                           value: 3,
+                          child: Text('Price Drop'),
                         ),
                         DropdownMenuItem(
-                          child: Text('Loyalty (Coming Soon)'),
                           value: 4,
+                          child: Text('Loyalty (Coming Soon)'),
                         ),
                       ],
                       onChanged: (int? value) {
@@ -222,11 +239,11 @@ class _BookingPageState extends State<BookingPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Config.primaryColor,
                     ),
+                    onPressed: handleSubmit,
                     child: const Text(
                       'Submit Dubz',
                       style: TextStyle(fontSize: 18, color: Colors.black),
-                    ),
-                    onPressed: handleSubmit,
+                    ),                    
                   ),
                 ),
               ],
@@ -242,7 +259,7 @@ class DatetimePickerWidget extends StatefulWidget {
   final Function(DateTime) onDateTimeChanged;
   final GlobalKey<_DatetimePickerWidgetState> key;
 
-  DatetimePickerWidget({
+  const DatetimePickerWidget({
     required this.onDateTimeChanged,
     required this.key,
   }) : super(key: key);
