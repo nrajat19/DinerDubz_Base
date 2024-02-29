@@ -14,7 +14,7 @@ class DiscountPage extends StatefulWidget {
 enum FilterStatus { Current, Upcoming, Closed }
 
 class _DiscountPageState extends State<DiscountPage> {
-  FilterStatus status = FilterStatus.Upcoming;
+  FilterStatus status = FilterStatus.Current;
   Alignment _alignment = Alignment.centerLeft;
 
   Future<List<Map<String, dynamic>>> fetchDiscounts() async {
@@ -24,12 +24,22 @@ class _DiscountPageState extends State<DiscountPage> {
 
     QuerySnapshot querySnapshot = await discountsCollection.get();
     List<Map<String, dynamic>> discounts = [];
+
     for (var doc in querySnapshot.docs) {
       var data = doc.data() as Map<String, dynamic>;
+      
+      // Fetch coupons to count used and remaining
+      QuerySnapshot couponsSnapshot = await doc.reference.collection('discounts').get();
+      int totalCoupons = couponsSnapshot.docs.length;
+      int usedCoupons = couponsSnapshot.docs.where((coupon) => coupon['verified']).length;
+      
+      data['totalCoupons'] = totalCoupons;
+      data['usedCoupons'] = usedCoupons;
       discounts.add(data);
     }
     return discounts;
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -107,9 +117,14 @@ class _DiscountPageState extends State<DiscountPage> {
                 child: ListView.builder(
                   itemCount: filteredDiscounts.length,
                   itemBuilder: (context, index) {
+                    Map<String, dynamic> discount = filteredDiscounts[index];
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 10), // Add space between cards
-                      child: ScheduleCard(discountData: filteredDiscounts[index]),
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: ScheduleCard(
+                        discountData: discount,
+                        totalCoupons: discount['totalCoupons'],
+                        usedCoupons: discount['usedCoupons']
+                      ),
                     );  
                   },
                 ),
@@ -131,7 +146,8 @@ class _DiscountPageState extends State<DiscountPage> {
         return discounts.where((discount) {
           DateTime startDate = discount['startDate'].toDate();
           DateTime endDate = discount['endDate'].toDate();
-          return now.isAfter(startDate) && now.isBefore(endDate);
+          bool isFullyUsed = discount['usedCoupons'] == discount['totalCoupons'];
+          return now.isAfter(startDate) && now.isBefore(endDate) && !isFullyUsed;
         }).toList();
       case FilterStatus.Upcoming:
         return discounts.where((discount) {
@@ -141,7 +157,8 @@ class _DiscountPageState extends State<DiscountPage> {
       case FilterStatus.Closed:
         return discounts.where((discount) {
           DateTime endDate = discount['endDate'].toDate();
-          return now.isAfter(endDate);
+          bool isFullyUsed = discount['usedCoupons'] == discount['totalCoupons'];
+          return now.isAfter(endDate) || isFullyUsed;
         }).toList();
       default:
         return discounts;
@@ -154,11 +171,19 @@ class _DiscountPageState extends State<DiscountPage> {
 
 class ScheduleCard extends StatelessWidget {
   final Map<String, dynamic> discountData;
+  final int totalCoupons;
+  final int usedCoupons;
 
-  const ScheduleCard({Key? key, required this.discountData}) : super(key: key);
+  const ScheduleCard({
+      Key? key,
+      required this.discountData,
+      required this.totalCoupons,
+      required this.usedCoupons
+    }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    int remainingCoupons = totalCoupons - usedCoupons;
     // Format the dates
     String startDate = discountData['startDate'] != null
         ? DateFormat('MM/dd/yyyy HH:mm').format(discountData['startDate'].toDate())
@@ -196,9 +221,9 @@ class ScheduleCard extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
           ),
           SizedBox(height: 15),
-          Text(
-            "Dubz Qty: ${discountData['quantity']}",
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+          CouponProgressBar(
+            totalCoupons: totalCoupons,
+            usedCoupons: usedCoupons,
           ),
         ],
       ),
@@ -206,4 +231,46 @@ class ScheduleCard extends StatelessWidget {
 
   }
 }
+
+class CouponProgressBar extends StatelessWidget {
+  final int totalCoupons;
+  final int usedCoupons;
+
+  CouponProgressBar({required this.totalCoupons, required this.usedCoupons});
+
+  @override
+  Widget build(BuildContext context) {
+    double usedFraction = totalCoupons > 0 ? usedCoupons / totalCoupons : 0;
+
+    return Stack(
+      children: [
+        Container(
+          width: double.infinity,
+          height: 20,
+          decoration: BoxDecoration(
+            color: Colors.red, // Color for remaining coupons
+            borderRadius: BorderRadius.circular(5),
+          ),
+        ),
+        FractionallySizedBox(
+          widthFactor: usedFraction,
+          child: Container(
+            height: 20,
+            decoration: BoxDecoration(
+              color: Colors.green, // Color for used coupons
+              borderRadius: BorderRadius.circular(5),
+            ),
+          ),
+        ),
+        Center(
+          child: Text(
+            '$usedCoupons / $totalCoupons Dubz Used',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 

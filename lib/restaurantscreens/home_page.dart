@@ -166,20 +166,24 @@ class _HomePageState extends State<HomePage> {
                 Config.spaceBig,
 
                 Center(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color.fromARGB(255, 240, 99, 5),
+                  child: SizedBox(
+                    height: 50,
+                    width: 250,
+                    child:ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Config.primaryColor,
+                      ),
+                      child: const Text(
+                        'Verify Customer',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => DubzVerifyPage()),
+                        );                  
+                      },
                     ),
-                    child: const Text(
-                      'Verify Customer',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (context) => DubzVerifyPage()),
-                      );                  
-                    },
                   ),
                 ),
               ],
