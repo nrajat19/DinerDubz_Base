@@ -1,5 +1,6 @@
 import 'package:dubz_creator/utils/config.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -15,6 +16,20 @@ enum FilterStatus { Current, Upcoming, Closed }
 class _DiscountPageState extends State<DiscountPage> {
   FilterStatus status = FilterStatus.Upcoming;
   Alignment _alignment = Alignment.centerLeft;
+
+  Future<List<Map<String, dynamic>>> fetchDiscounts() async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+    var discountsCollection = FirebaseFirestore.instance.collection('restaurant')
+        .doc(userId).collection('discount_groups');
+
+    QuerySnapshot querySnapshot = await discountsCollection.get();
+    List<Map<String, dynamic>> discounts = [];
+    for (var doc in querySnapshot.docs) {
+      var data = doc.data() as Map<String, dynamic>;
+      discounts.add(data);
+    }
+    return discounts;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,150 +88,122 @@ class _DiscountPageState extends State<DiscountPage> {
                 ),
               ],
             ),
-            Config.spaceBig,
+            Config.spaceMedium,
 
-            ScheduleCard(),
-          
+            FutureBuilder<List<Map<String, dynamic>>>(
+            future: fetchDiscounts(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return CircularProgressIndicator();
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Text('No discounts found');
+              }
+
+              // Filter data based on the current status
+              List<Map<String, dynamic>> filteredDiscounts = filterDiscounts(snapshot.data!);
+
+              return Expanded(
+                child: ListView.builder(
+                  itemCount: filteredDiscounts.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10), // Add space between cards
+                      child: ScheduleCard(discountData: filteredDiscounts[index]),
+                    );  
+                  },
+                ),
+              );
+            },
+          ),
+
           ],
         ),
       ),
     );
   }
+
+  List<Map<String, dynamic>> filterDiscounts(List<Map<String, dynamic>> discounts) {
+    DateTime now = DateTime.now();
+
+    switch (status) {
+      case FilterStatus.Current:
+        return discounts.where((discount) {
+          DateTime startDate = discount['startDate'].toDate();
+          DateTime endDate = discount['endDate'].toDate();
+          return now.isAfter(startDate) && now.isBefore(endDate);
+        }).toList();
+      case FilterStatus.Upcoming:
+        return discounts.where((discount) {
+          DateTime startDate = discount['startDate'].toDate();
+          return now.isBefore(startDate);
+        }).toList();
+      case FilterStatus.Closed:
+        return discounts.where((discount) {
+          DateTime endDate = discount['endDate'].toDate();
+          return now.isAfter(endDate);
+        }).toList();
+      default:
+        return discounts;
+    }
+  }
+
+
 }
  
+
 class ScheduleCard extends StatelessWidget {
-  const ScheduleCard({Key? key}) : super(key: key);
+  final Map<String, dynamic> discountData;
+
+  const ScheduleCard({Key? key, required this.discountData}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Format the dates
+    String startDate = discountData['startDate'] != null
+        ? DateFormat('MM/dd/yyyy HH:mm').format(discountData['startDate'].toDate())
+        : 'N/A';
+    String endDate = discountData['endDate'] != null
+        ? DateFormat('MM/dd/yyyy HH:mm').format(discountData['endDate'].toDate())
+        : 'N/A';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade200,
         borderRadius: BorderRadius.circular(10),
       ),
-      width: Config.widthSize * 0.5,
       padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: <Widget>[
-              SizedBox(
-                width: 100,
-                child: Text(
-                "Dubz Details:",
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-              ),
-              ),
-            ],
+          Text(
+            "Dubz Details: ${discountData['description']}",
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
           ),
-          
-          SizedBox(
-            height: 15,
+          SizedBox(height: 15),
+          Text(
+            "Dubz Type: ${discountData['type']}",
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
           ),
-
-          Row(
-            children: <Widget>[
-              SizedBox(
-                width: 100,
-                child: Text(
-                "Dubz Type:",
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-              ),
-              ),
-            ],
+          SizedBox(height: 15),
+          Text(
+            "From: $startDate",
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
           ),
-          
-          SizedBox(
-            height: 15,
+          SizedBox(height: 15),
+          Text(
+            "To: $endDate",
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
           ),
-
-          Row(
-            children: <Widget>[
-              SizedBox(
-                width: 100,
-                child: Text(
-                "From:",
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-              ),
-              ),
-
-              Icon(
-                Icons.calendar_today,
-                color: Config.primaryColor,
-                size: 15,
-              ),
-              Icon(
-                Icons.access_alarm,
-                color: Config.primaryColor,
-                size: 15,
-              ),
-              
-              SizedBox(
-                width: 25,
-              ),
-
-              Text(
-                "Wednesday, 2/14/2024",
-                style: const TextStyle(color: Config.primaryColor),
-              ),
-
-            ],
+          SizedBox(height: 15),
+          Text(
+            "Dubz Qty: ${discountData['quantity']}",
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
           ),
-          
-          SizedBox(
-            height: 15,
-          ),
-
-          Row(
-            children: <Widget>[
-              SizedBox(
-                width: 100,
-                child: Text(
-                "To:",
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-                ),
-              ),
-
-              Icon(
-                Icons.calendar_today,
-                color: Config.primaryColor,
-                size: 15,
-              ),
-              Icon(
-                Icons.access_alarm,
-                color: Config.primaryColor,
-                size: 15,
-              ),
-
-              SizedBox(
-                width: 25,
-              ),
-              Text(
-                "Wednesday, 2/14/2024",
-                style: const TextStyle(color: Config.primaryColor),
-              ),
-
-            ],
-          ),
-
-          SizedBox(
-            height: 15,
-          ),
-
-          Row(
-            children: <Widget>[
-              SizedBox(
-                width: 100,
-                child: Text(
-                "Dubz Qty:",
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-              ),
-              ),
-            ],
-          ),          
         ],
       ),
     );
+
   }
-  
 }
+
