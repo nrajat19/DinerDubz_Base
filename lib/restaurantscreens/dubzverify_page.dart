@@ -2,6 +2,8 @@ import 'package:dubz_creator/utils/main_layout.dart';
 import 'package:dubz_creator/utils/config.dart';
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DubzVerifyPage extends StatefulWidget {
   const DubzVerifyPage({Key? key}) : super(key: key);
@@ -12,6 +14,18 @@ class DubzVerifyPage extends StatefulWidget {
 
 class _DubzVerifyPageState extends State<DubzVerifyPage> {
   String otpCode = '';
+  String? selectedCouponDescription;
+  List<Map<String, dynamic>> currentCoupons = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCurrentCoupons().then((coupons) {
+      setState(() {
+        currentCoupons = coupons;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +73,33 @@ class _DubzVerifyPageState extends State<DubzVerifyPage> {
                   ),
                 ),
                 
+                Config.spaceSmall,
+
+                SizedBox(
+                  width: Config.widthSize * 0.5,
+                  height: 50,
+                  child: DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: "Select Current Dubz",
+                    border: OutlineInputBorder(),
+                  ),
+                  value: selectedCouponDescription,
+                  items: currentCoupons.map<DropdownMenuItem<String>>((coupon) {
+                    return DropdownMenuItem<String>(
+                      value: coupon['description'],
+                      child: Text(coupon['description']),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedCouponDescription = newValue;
+                    });
+                  },
+                ),
+                ),
+
+                Config.spaceBig,
+
                 const Center(
                   child: Text(
                     "Please Enter 6-Digit Dubz Code From Customer Side",
@@ -69,7 +110,7 @@ class _DubzVerifyPageState extends State<DubzVerifyPage> {
                     ),
                   ),
                 ),
-                Config.spaceBig,
+                Config.spaceMedium,
                 
                 SizedBox(
                   width: Config.widthSize * 0.5,
@@ -110,7 +151,7 @@ class _DubzVerifyPageState extends State<DubzVerifyPage> {
                 
                 Center (
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: verifyCoupon,
                     child: Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: 40,
@@ -137,146 +178,64 @@ class _DubzVerifyPageState extends State<DubzVerifyPage> {
       ),
     );
   }
+
+  Future<List<Map<String, dynamic>>> fetchCurrentCoupons() async {
+  String userId = FirebaseAuth.instance.currentUser!.uid;
+  var discountsCollection = FirebaseFirestore.instance.collection('restaurant')
+      .doc(userId).collection('discount_groups');
+
+  QuerySnapshot querySnapshot = await discountsCollection.get();
+  DateTime now = DateTime.now();
+  List<Map<String, dynamic>> currentCoupons = [];
+
+  for (var doc in querySnapshot.docs) {
+    var data = doc.data() as Map<String, dynamic>;
+    DateTime startDate = data['startDate'].toDate();
+    DateTime endDate = data['endDate'].toDate();
+
+    if (now.isAfter(startDate) && now.isBefore(endDate)) {
+      currentCoupons.add(data);
+    }
+  }
+  return currentCoupons;
 }
-/** 
-class OTPForm extends StatelessWidget {
-  const OTPForm({Key? key}) : super(key: key);
 
-  @override
-  Widget build(BuildContext context)  {
-    return Form(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          SizedBox(
-            height: 68,
-            width: 64,
-            child: TextFormField(
-              onChanged: (value) {
-                if (value.length == 1) {
-                  FocusScope.of(context).nextFocus();
-                }
-              },
-              onSaved: (pin1) {},
-              decoration: const InputDecoration(hintText: 'X'),
-              style: Theme.of(context).textTheme.headlineMedium,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              inputFormatters: [
-                LengthLimitingTextInputFormatter(1),
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+void verifyCoupon() async {
+  if (selectedCouponDescription == null || otpCode.isEmpty) {
+    // Show an error message if the description or code is not entered
+    dbResponse("Please select a coupon and enter the code");
+    return;
+  }
 
-            ),
-          ),
-          SizedBox(
-            height: 68,
-            width: 64,
-            child: TextFormField(
-              onChanged: (value) {
-                if (value.length == 1) {
-                  FocusScope.of(context).nextFocus();
-                }
-              },
-              onSaved: (pin2) {},
-              decoration: const InputDecoration(hintText: 'X'),
-              style: Theme.of(context).textTheme.headlineMedium,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              inputFormatters: [
-                LengthLimitingTextInputFormatter(1),
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+  try {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+    var couponsQuery = FirebaseFirestore.instance
+        .collection('restaurant')
+        .doc(userId)
+        .collection('discount_groups')
+        .doc(selectedCouponDescription)
+        .collection('discounts')
+        .where('uniqueId', isEqualTo: otpCode)
+        .get();
 
-            ),
-          ),
-          SizedBox(
-            height: 68,
-            width: 64,
-            child: TextFormField(
-              onChanged: (value) {
-                if (value.length == 1) {
-                  FocusScope.of(context).nextFocus();
-                }
-              },
-              onSaved: (pin3) {},
-              decoration: const InputDecoration(hintText: 'X'),
-              style: Theme.of(context).textTheme.headlineMedium,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              inputFormatters: [
-                LengthLimitingTextInputFormatter(1),
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+    var coupons = await couponsQuery;
 
-            ),
-          ),
-          SizedBox(
-            height: 68,
-            width: 64,
-            child: TextFormField(
-              onChanged: (value) {
-                if (value.length == 1) {
-                  FocusScope.of(context).nextFocus();
-                }
-              },
-              onSaved: (pin4) {},
-              decoration: const InputDecoration(hintText: 'X'),
-              style: Theme.of(context).textTheme.headlineMedium,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              inputFormatters: [
-                LengthLimitingTextInputFormatter(1),
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-
-            ),
-          ),       
-          SizedBox(
-            height: 68,
-            width: 64,
-            child: TextFormField(
-              onChanged: (value) {
-                if (value.length == 1) {
-                  FocusScope.of(context).nextFocus();
-                }
-              },
-              onSaved: (pin5) {},
-              decoration: const InputDecoration(hintText: 'X'),
-              style: Theme.of(context).textTheme.headlineMedium,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              inputFormatters: [
-                LengthLimitingTextInputFormatter(1),
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-
-            ),
-          ),
-          SizedBox(
-            height: 68,
-            width: 64,
-            child: TextFormField(
-              onChanged: (value) {
-                if (value.length == 1) {
-                  FocusScope.of(context).nextFocus();
-                }
-              },
-              onSaved: (pin6) {},
-              decoration: const InputDecoration(hintText: 'X'),
-              style: Theme.of(context).textTheme.headlineMedium,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              inputFormatters: [
-                LengthLimitingTextInputFormatter(1),
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-
-            ),
-          ),   
-        ],
-      ),
-    );
+    if (coupons.docs.isEmpty || coupons.docs.first.data()['verified']) {
+      // Coupon code is invalid or already used
+      dbResponse("Invalid or Coupon Code Already Used");
+    } else {
+      // Coupon code is valid, update the 'verified' field to true
+      await coupons.docs.first.reference.update({'verified': true});
+      dbResponse("Coupon Verified Successfully");
+    }
+  } catch (e) {
+    dbResponse("Error verifying coupon: ${e.toString()}");
   }
 }
-*/
+
+void dbResponse(String message) {
+  final snackBar = SnackBar(content: Text(message));
+  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+}
+
+}
