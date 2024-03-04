@@ -1,4 +1,5 @@
 import 'package:dubz_creator/components/dubz_card.dart';
+import 'package:dubz_creator/restaurantscreens/profile_page.dart';
 import 'package:dubz_creator/utils/config.dart';
 import 'package:flutter/material.dart';
 import 'package:dubz_creator/loginscreen/signin_screen.dart';
@@ -16,20 +17,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Map<String, dynamic>> dubzCat = [
-    {
-      //"icon": //insert icon
-      "category": "General",
-    },
-    {
-      //"icon": ,//insert icon
-      "category": "Drop Discount",
-    },
-    {
-      //"icon": //insert icon
-      "category": "Loyalty: Coming Soon",
-    },
-  ];
 
   List<String> chartTabs = ['Line Chart', 'Pie Chart', 'Bar Chart'];
 
@@ -104,8 +91,17 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                   Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
+                    IconButton(
+                      icon: Icon(Icons.person_outline),
+                      onPressed: () {
+                        // Navigate to another page when the person_outline button is pressed
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ProfilePage()),
+                        );
+                      },
+                    ),
                     Text(
                       userName ?? "",
                       style: const TextStyle(
@@ -113,6 +109,7 @@ class _HomePageState extends State<HomePage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    Spacer(),
                     ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Config.primaryColor,
@@ -175,7 +172,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       child: const Text(
                         'Verify Customer',
-                        style: TextStyle(color: Colors.black),
+                        style: TextStyle(fontSize: 18, color: Colors.black),
                       ),
                       onPressed: () {
                         Navigator.of(context).push(

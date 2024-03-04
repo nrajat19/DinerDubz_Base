@@ -1,6 +1,8 @@
 import 'package:dubz_creator/utils/config.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dubz_creator/loginscreen/signin_screen.dart';
+import 'package:dubz_creator/restaurantscreens/profile_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -16,6 +18,34 @@ enum FilterStatus { Current, Upcoming, Closed }
 class _DiscountPageState extends State<DiscountPage> {
   FilterStatus status = FilterStatus.Current;
   Alignment _alignment = Alignment.centerLeft;
+  String? userName;
+
+  Future<void> fetchUserData() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      try {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('restaurant')
+            .doc(currentUser.uid)
+            .get();
+
+        if (userDoc.exists) {
+          setState(() {
+            userName = userDoc['userName']; // Assuming 'userName' is the field in Firestore
+          });
+        }
+      } catch (e) {
+        // Handle errors here
+        print('Error fetching user data: $e');
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
 
   Future<List<Map<String, dynamic>>> fetchDiscounts() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -49,6 +79,46 @@ class _DiscountPageState extends State<DiscountPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget> [
+            Row(
+                  children: <Widget>[
+                    IconButton(
+                      icon: Icon(Icons.person_outline),
+                      onPressed: () {
+                        // Navigate to another page when the person_outline button is pressed
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ProfilePage()),
+                        );
+                      },
+                    ),
+                    Text(
+                      userName ?? "",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                    ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Config.primaryColor,
+                    ),
+                    child: const Text(
+                      'Logout',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (context) => SignInScreen()),
+                      );                  
+                    },
+                  ),
+
+                  ],
+                ),
+            Config.spaceMedium,
+
             Text(
               "Discount Schedule",
               textAlign: TextAlign.center,

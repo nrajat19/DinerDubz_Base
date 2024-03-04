@@ -3,6 +3,8 @@ import 'package:dubz_creator/utils/config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math';
+import 'package:dubz_creator/loginscreen/signin_screen.dart';
+import 'package:dubz_creator/restaurantscreens/profile_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -23,6 +25,35 @@ class _BookingPageState extends State<BookingPage> {
   DateTime? endDate;
   final GlobalKey<_DatetimePickerWidgetState> startPickerKey = GlobalKey();
   final GlobalKey<_DatetimePickerWidgetState> endPickerKey = GlobalKey();
+  String? userName;
+
+  Future<void> fetchUserData() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      try {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('restaurant')
+            .doc(currentUser.uid)
+            .get();
+
+        if (userDoc.exists) {
+          setState(() {
+            userName = userDoc['userName']; // Assuming 'userName' is the field in Firestore
+          });
+        }
+      } catch (e) {
+        // Handle errors here
+        print('Error fetching user data: $e');
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+  
   String generateUniqueId() {
       Random random = Random();
       int number = random.nextInt(900000) + 100000; // This will generate a random number between 100000 and 999999
@@ -110,10 +141,49 @@ class _BookingPageState extends State<BookingPage> {
       body: Stack(
         children: [
           Padding(
-            padding: EdgeInsets.all(32),
+            padding: EdgeInsets.all(20),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Row(
+                  children: <Widget>[
+                    IconButton(
+                      icon: Icon(Icons.person_outline),
+                      onPressed: () {
+                        // Navigate to another page when the person_outline button is pressed
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ProfilePage()),
+                        );
+                      },
+                    ),
+                    Text(
+                      userName ?? "",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                    ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Config.primaryColor,
+                    ),
+                    child: const Text(
+                      'Logout',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (context) => SignInScreen()),
+                      );                  
+                    },
+                  ),
+
+                  ],
+                ),
+                Config.spaceMedium,
+
                 const Text(
                   "Fill out Form to Upload Discount for Customers",
                   style: TextStyle(
@@ -124,7 +194,7 @@ class _BookingPageState extends State<BookingPage> {
                 Padding(
                   padding: const EdgeInsets.all(32.0),
                   child: SizedBox(
-                    height: 50,
+                    height: 60,
                     width: Config.widthSize * 0.6,
                     child: TextField(
                       controller: descriptionController,
@@ -137,7 +207,7 @@ class _BookingPageState extends State<BookingPage> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: SizedBox(
-                    height: 50,
+                    height: 60,
                     width: Config.widthSize * 0.6,
                     child: DropdownButtonFormField<int>(
                       decoration: InputDecoration(
@@ -218,7 +288,7 @@ class _BookingPageState extends State<BookingPage> {
                 Padding(
                   padding: const EdgeInsets.all(50),
                   child: SizedBox(
-                    height: 50,
+                    height: 60,
                     width: Config.widthSize * 0.6,
                     child: TextField(
                       controller: quantityController,
@@ -231,6 +301,8 @@ class _BookingPageState extends State<BookingPage> {
                     ),
                   ),
                 ),
+
+                Config.spaceBig,
 
                 SizedBox(
                   height: 50,

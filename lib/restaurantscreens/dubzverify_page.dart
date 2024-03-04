@@ -16,6 +16,7 @@ class _DubzVerifyPageState extends State<DubzVerifyPage> {
   String otpCode = '';
   String? selectedCouponDescription;
   List<Map<String, dynamic>> currentCoupons = [];
+  TextEditingController pinController = TextEditingController();
 
   @override
   void initState() {
@@ -118,6 +119,7 @@ class _DubzVerifyPageState extends State<DubzVerifyPage> {
                   child: PinCodeTextField(
                   appContext: context, 
                   length: 6, 
+                  controller: pinController,
                   onChanged: (value) {
                     setState(() {
                       otpCode = value;
@@ -193,12 +195,21 @@ class _DubzVerifyPageState extends State<DubzVerifyPage> {
     DateTime startDate = data['startDate'].toDate();
     DateTime endDate = data['endDate'].toDate();
 
-    if (now.isAfter(startDate) && now.isBefore(endDate)) {
+    // Fetch coupons to count used and remaining
+    QuerySnapshot couponsSnapshot = await doc.reference.collection('discounts').get();
+    int totalCoupons = couponsSnapshot.docs.length;
+    int usedCoupons = couponsSnapshot.docs.where((coupon) => coupon['verified']).length;
+
+    data['totalCoupons'] = totalCoupons;
+    data['usedCoupons'] = usedCoupons;
+
+    if (now.isAfter(startDate) && now.isBefore(endDate) && usedCoupons < totalCoupons) {
       currentCoupons.add(data);
     }
   }
   return currentCoupons;
 }
+
 
 void verifyCoupon() async {
   if (selectedCouponDescription == null || otpCode.isEmpty) {
@@ -227,6 +238,14 @@ void verifyCoupon() async {
       // Coupon code is valid, update the 'verified' field to true
       await coupons.docs.first.reference.update({'verified': true});
       dbResponse("Coupon Verified Successfully");
+
+      setState(() {
+        otpCode = '';
+        selectedCouponDescription = null;
+        pinController.clear();
+      });
+
+      fetchCurrentCoupons();
     }
   } catch (e) {
     dbResponse("Error verifying coupon: ${e.toString()}");
