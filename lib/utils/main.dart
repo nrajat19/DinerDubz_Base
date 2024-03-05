@@ -13,7 +13,8 @@ void main() async {
       apiKey: "AIzaSyBpHoQDyT7afa7PG_Xn9RgMLMYhZA_HbUE", 
       appId: "1:733362896359:web:3d5baa13da338a39941142", 
       messagingSenderId: "733362896359", 
-      projectId: "dubz-restaurant"
+      projectId: "dubz-restaurant",
+      storageBucket: "gs://dubz-restaurant.appspot.com",
     )
   );
   runApp(MaterialApp(

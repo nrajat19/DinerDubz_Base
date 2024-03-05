@@ -23,6 +23,15 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   late Timer _timer;
   String? userName;
+  double progress = 0.0;
+  Map<String, bool> fieldStatus = {
+    'email': false,
+    'userName': false,
+    'address': false,
+    'phoneNumber': false,
+    'cuisineType': false,
+    'displayImage': false
+  };
 
   Future<void> fetchUserData() async {
     User? currentUser = FirebaseAuth.instance.currentUser;
@@ -34,10 +43,16 @@ class _HomePageState extends State<HomePage> {
             .get();
 
         if (userDoc.exists) {
+          Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
           setState(() {
-            userName = userDoc['userName']; // Assuming 'userName' is the field in Firestore
+            userName = data['userName'];
+            fieldStatus.forEach((key, _) {
+              fieldStatus[key] = data[key] != null && data[key].isNotEmpty;
+            });
           });
         }
+
+
       } catch (e) {
         // Handle errors here
         print('Error fetching user data: $e');
@@ -73,6 +88,39 @@ class _HomePageState extends State<HomePage> {
       default:
         return Container();
     }
+  }
+
+  Widget buildSegmentedProgressBar() {
+    List<Widget> segments = [];
+    fieldStatus.forEach((key, value) {
+      segments.add(
+        Expanded(
+          child: Column(
+            children: [
+              Container(
+                height: 10,
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: BoxDecoration(
+                  color: value ? Config.primaryColor : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+              SizedBox(height: 5), // Spacing between bar and label
+              Text(
+                key, // Field name as label
+                style: TextStyle(
+                  fontSize: 12,
+                  color: value ? Colors.black : Colors.grey[600],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+
+    return Row(children: segments);
   }
 
   @override
@@ -151,7 +199,9 @@ class _HomePageState extends State<HomePage> {
                 ),
 
                 Config.spaceBig,
-                
+                buildSegmentedProgressBar(),
+
+                /** 
                 Center (
                   child: SizedBox (
                     width: Config.widthSize * 0.5,
@@ -159,7 +209,7 @@ class _HomePageState extends State<HomePage> {
                     child: analyticsDisplay(),
                   ),
                 ),
-
+                */
                 Config.spaceBig,
 
                 Center(

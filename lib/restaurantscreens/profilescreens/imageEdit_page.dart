@@ -92,19 +92,13 @@ class _ImageEditPageState extends State<ImageEditPage> {
                     ),
                     onPressed: _pickImage,
                     child: Text(
-                      "Upload Restaurant Image",
+                      "Select Restaurant Image",
                       style: TextStyle(
                         color: Colors.black,
                       ),
                     ),
                   ),
                 ),
-                if (_restaurantImageData != null)
-                  Container(
-                    height: 200,
-                    width: double.infinity,
-                    child: Image.memory(_restaurantImageData!, fit: BoxFit.cover),
-                  ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _uploadImage,
@@ -127,6 +121,12 @@ class _ImageEditPageState extends State<ImageEditPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 20),
+                if (_restaurantImageData != null)
+                  Container(
+                    width: double.infinity,
+                    child: Image.memory(_restaurantImageData!, fit: BoxFit.cover),
+                  ),
               ],
             ),
           ),
