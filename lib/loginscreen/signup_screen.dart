@@ -96,6 +96,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         FirebaseFirestore.instance.collection(collectionName).doc(uid).set({
                           'userName': _userNameTextController.text,
                           'email': _emailTextController.text,
+                          'address': '',
+                          'phoneNumber': '',
+                          'cuisineType': '',
+                          'displayImage': '',
                           // Add other fields as needed
                         }).then((_) {
                           print("User details added to Firestore");

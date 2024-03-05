@@ -1,13 +1,7 @@
-import 'package:dubz_creator/utils/config.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dubz_creator/utils/config.dart';
 import 'package:dubz_creator/reusable_widgets/reusable_widget.dart';
-import 'dart:html' as html;
-import 'dart:typed_data';
-import 'dart:convert';
-
 
 class PassEditPage extends StatefulWidget {
   const PassEditPage({Key? key}) : super(key: key);
@@ -16,12 +10,41 @@ class PassEditPage extends StatefulWidget {
   State<PassEditPage> createState() => _PassEditPageState();
 }
 
-
 class _PassEditPageState extends State<PassEditPage> {
   TextEditingController _oldPassTextController = TextEditingController();
-  TextEditingController _confirmPassTextController = TextEditingController();
   TextEditingController _newPassTextController = TextEditingController();
- 
+  TextEditingController _confirmPassTextController = TextEditingController();
+
+  Future<void> updatePassword() async {
+  String oldPassword = _oldPassTextController.text;
+  String newPassword = _newPassTextController.text;
+  String confirmPassword = _confirmPassTextController.text;
+
+  if (newPassword != confirmPassword) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("New passwords do not match")));
+    return;
+  }
+
+  User? user = FirebaseAuth.instance.currentUser;
+  String email = user!.email!;
+
+  try {
+    AuthCredential credential = EmailAuthProvider.credential(email: email, password: oldPassword);
+    await user.reauthenticateWithCredential(credential);
+
+    await user.updatePassword(newPassword);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Password updated successfully")));
+  } on FirebaseAuthException catch (e) {
+    if (e.code == 'wrong-password') {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Incorrect old password")));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error updating password: ${e.message}")));
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("An error occurred: $e")));
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,102 +58,45 @@ class _PassEditPageState extends State<PassEditPage> {
         ),
       ),
       body: Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          decoration: BoxDecoration(
-            color: Colors.white,
-          ),
-          child: SingleChildScrollView(
-              child: Padding(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        decoration: BoxDecoration(
+          color: Config.primaryColor,
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
             padding: EdgeInsets.fromLTRB(20, 120, 20, 0),
             child: Column(
               children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: SizedBox(
-                    height: 60,
-                    width: Config.widthSize * 0.6,
-                    child: TextField(
-                      controller: _oldPassTextController,
-                      decoration: const InputDecoration(
-                        labelText:
-                              "Enter Old Password"), // Only numbers can be entered
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(
-                  height: 20,
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: SizedBox(
-                    height: 60,
-                    width: Config.widthSize * 0.6,
-                    child: TextField(
-                      controller: _newPassTextController,
-                      decoration: const InputDecoration(
-                        labelText:
-                              "Enter New Password"), // Only numbers can be entered
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(
-                  height: 20,
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: SizedBox(
-                    height: 60,
-                    width: Config.widthSize * 0.6,
-                    child: TextField(
-                      controller: _confirmPassTextController,
-                      decoration: const InputDecoration(
-                        labelText:
-                              "Confirm New Password"), // Only numbers can be entered
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(
-                  height: 20,
-                ),
-                
+                reusableTextField("Enter Old Password", Icons.lock, true, _oldPassTextController),
+                const SizedBox(height: 10),
+                reusableTextField("Enter New Password", Icons.lock_outline, true, _newPassTextController),
+                const SizedBox(height: 10),
+                reusableTextField("Confirm New Password", Icons.lock_outline, true, _confirmPassTextController),
+                const SizedBox(height: 10),
                 ElevatedButton(
-                    onPressed: () {
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 16,
-                      ),
-                      child: Text(
-                        'Confirm',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.white
-                        ),
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Config.primaryColor,
-                      fixedSize: const Size(360, 60),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.zero, // Set to zero for square corners
-                      ),
+                  onPressed: updatePassword,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    child: Text(
+                      'Confirm',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
                     ),
                   ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    fixedSize: const Size(360, 60),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  ),
+                ),
               ],
             ),
-          ))),
+          ),
+        ),
+      ),
     );
   }
 }
-
 
 
 

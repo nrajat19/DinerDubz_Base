@@ -1,13 +1,7 @@
-import 'package:dubz_creator/utils/config.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dubz_creator/reusable_widgets/reusable_widget.dart';
-import 'dart:html' as html;
-import 'dart:typed_data';
-import 'dart:convert';
-
+import 'package:dubz_creator/utils/config.dart';
 
 class CuisineEditPage extends StatefulWidget {
   const CuisineEditPage({Key? key}) : super(key: key);
@@ -16,23 +10,39 @@ class CuisineEditPage extends StatefulWidget {
   State<CuisineEditPage> createState() => _CuisineEditPageState();
 }
 
-
 class _CuisineEditPageState extends State<CuisineEditPage> {
-  final List<String> cuisineTypes = ['Italian', 'American', 'Indian', 'Chinese', 'Mediterranean'];
-
-
-  // Map to keep track of selected cuisines
+  final List<String> cuisineTypes = ['Italian', 'American', 'Indian', 'Chinese', 'Mediterranean', 'Mexican'];
   Map<String, bool> selectedCuisines = {};
 
   @override
   void initState() {
     super.initState();
-    // Initialize all cuisine types to false (not selected)
     for (var cuisine in cuisineTypes) {
       selectedCuisines[cuisine] = false;
     }
   }
 
+  Future<void> updateCuisines() async {
+    List<String> selectedCuisineList = selectedCuisines.entries
+        .where((entry) => entry.value)
+        .map((entry) => entry.key)
+        .toList();
+
+    User? currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('restaurant') // Adjust if using a different collection
+            .doc(currentUser.uid)
+            .update({'cuisineType': selectedCuisineList});
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Cuisine types updated successfully")));
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error updating cuisines: $e")));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,26 +57,26 @@ class _CuisineEditPageState extends State<CuisineEditPage> {
         ),
       ),
       body: Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          decoration: BoxDecoration(
-            color: Colors.white,
-          ),
-          child: SingleChildScrollView(
-              child: Padding(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        decoration: BoxDecoration(
+          color: Config.primaryColor,
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
             padding: EdgeInsets.fromLTRB(20, 120, 20, 0),
             child: Column(
               children: <Widget>[
-                Container(  
-                  width: Config.widthSize * 0.5,
+                Container(
+                  width: Config.widthSize * 0.3,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Colors.white.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.black),
                   ),
                   child: Column(
                     children: [
-                      Text(
+                      const Text(
                         "Select Cuisine Type",
                         style: TextStyle(
                           fontSize: 20,
@@ -92,44 +102,36 @@ class _CuisineEditPageState extends State<CuisineEditPage> {
                     ],
                   ),
                 ),
-
-                
-                const SizedBox(
-                  height: 20,
-                ),
-
+                const SizedBox(height: 20),
                 ElevatedButton(
-                    onPressed: () {
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 16,
-                      ),
-                      child: Text(
-                        'Confirm',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.white
-                        ),
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Config.primaryColor,
-                      fixedSize: const Size(360, 60),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.zero, // Set to zero for square corners
+                  onPressed: updateCuisines,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    child: const Text(
+                      'Confirm',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.white
                       ),
                     ),
                   ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    fixedSize: const Size(360, 60),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero,
+                    ),
+                  ),
+                ),
               ],
             ),
-          ))),
+          ),
+        ),
+      ),
     );
   }
 }
-
 
 
 

@@ -1,12 +1,8 @@
-import 'package:dubz_creator/utils/config.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dubz_creator/utils/config.dart';
 import 'package:dubz_creator/reusable_widgets/reusable_widget.dart';
-import 'dart:html' as html;
-import 'dart:typed_data';
-import 'dart:convert';
 
 
 class NumberEditPage extends StatefulWidget {
@@ -16,10 +12,31 @@ class NumberEditPage extends StatefulWidget {
   State<NumberEditPage> createState() => _NumberEditPageState();
 }
 
-
 class _NumberEditPageState extends State<NumberEditPage> {
   TextEditingController _numberTextController = TextEditingController();
- 
+
+  void updatePhoneNumber() async {
+    String newPhoneNumber = _numberTextController.text.trim();
+    User? currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('restaurant')
+            .doc(currentUser.uid)
+            .update({'phoneNumber': newPhoneNumber});
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Phone number updated successfully"))
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error updating phone number: $e"))
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,66 +50,38 @@ class _NumberEditPageState extends State<NumberEditPage> {
         ),
       ),
       body: Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          decoration: BoxDecoration(
-            color: Colors.white,
-          ),
-          child: SingleChildScrollView(
-              child: Padding(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        decoration: BoxDecoration(color: Config.primaryColor),
+        child: SingleChildScrollView(
+          child: Padding(
             padding: EdgeInsets.fromLTRB(20, 120, 20, 0),
             child: Column(
               children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: SizedBox(
-                    height: 60,
-                    width: Config.widthSize * 0.6,
-                    child: TextField(
-                      controller: _numberTextController,
-                      decoration: const InputDecoration(
-                        labelText:
-                              "Enter Phone Number (XXX-XXX-XXXX)"), // Only numbers can be entered
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(
-                  height: 20,
-                ),
-
+                reusableTextField("Enter Phone Number (XXX-XXX-XXXX)", Icons.phone, false, _numberTextController),
+                const SizedBox(height: 20),
                 ElevatedButton(
-                    onPressed: () {
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 16,
-                      ),
-                      child: Text(
-                        'Confirm',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.white
-                        ),
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Config.primaryColor,
-                      fixedSize: const Size(360, 60),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.zero, // Set to zero for square corners
-                      ),
+                  onPressed: updatePhoneNumber,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    child: Text(
+                      'Confirm',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
                     ),
                   ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    fixedSize: const Size(360, 60),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  ),
+                ),
               ],
             ),
-          ))),
+          ),
+        ),
+      ),
     );
   }
 }
-
-
 
 

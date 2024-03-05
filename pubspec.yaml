@@ -32,7 +32,8 @@ dependencies:
     sdk: flutter
   firebase_core: ^2.4.0
   firebase_auth: ^4.17.4
-  cloud_firestore: ^4.15.5
+  cloud_firestore: ^4.15.6
+  firebase_storage: ^11.6.7
   font_awesome_flutter: ^10.2.1
   table_calendar: ^3.0.8
   lottie: ^2.0.0

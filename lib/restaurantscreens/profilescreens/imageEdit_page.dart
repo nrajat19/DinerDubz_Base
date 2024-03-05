@@ -1,13 +1,11 @@
-import 'package:dubz_creator/utils/config.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dubz_creator/reusable_widgets/reusable_widget.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:dubz_creator/utils/config.dart';
 import 'dart:html' as html;
 import 'dart:typed_data';
 import 'dart:convert';
-
 
 class ImageEditPage extends StatefulWidget {
   const ImageEditPage({Key? key}) : super(key: key);
@@ -16,35 +14,53 @@ class ImageEditPage extends StatefulWidget {
   State<ImageEditPage> createState() => _ImageEditPageState();
 }
 
-
 class _ImageEditPageState extends State<ImageEditPage> {
   Uint8List? _restaurantImageData;
 
-
   Future<void> _pickImage() async {
-  // Create an input element for file upload
-  final html.FileUploadInputElement input = html.FileUploadInputElement()..accept = 'image/*';
-  input.click();
+    final html.FileUploadInputElement input = html.FileUploadInputElement()..accept = 'image/*';
+    input.click();
 
+    input.onChange.listen((event) {
+      final file = input.files!.first;
+      final reader = html.FileReader();
 
-  // Listen for file selection
-  input.onChange.listen((event) {
-    final file = input.files!.first;
-    final reader = html.FileReader();
-
-
-    // Convert the image file to a data URL and then to bytes
-    reader.readAsDataUrl(file);
-    reader.onLoadEnd.listen((event) {
-      setState(() {
-        final String base64String = reader.result as String;
-        _restaurantImageData = base64.decode(base64String.split(',').last);
+      reader.readAsDataUrl(file);
+      reader.onLoadEnd.listen((event) {
+        setState(() {
+          final String base64String = reader.result as String;
+          _restaurantImageData = base64.decode(base64String.split(',').last);
+        });
       });
     });
-  });
-}
+  }
 
- 
+  Future<void> _uploadImage() async {
+    if (_restaurantImageData != null) {
+      String userId = FirebaseAuth.instance.currentUser!.uid;
+      String imagePath = 'restaurant_images/$userId/restaurant_image.png';
+
+      try {
+        Reference ref = FirebaseStorage.instance.ref().child(imagePath);
+        UploadTask uploadTask = ref.putData(_restaurantImageData!);
+        TaskSnapshot snapshot = await uploadTask;
+
+        String imageUrl = await snapshot.ref.getDownloadURL();
+
+        await FirebaseFirestore.instance
+            .collection('restaurant')
+            .doc(userId)
+            .update({'displayImage': imageUrl});
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Image uploaded successfully")));
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error uploading image: $e")));
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No image selected")));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,26 +69,24 @@ class _ImageEditPageState extends State<ImageEditPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
-          "Edit Phone Contact",
+          "Edit Restaurant Image",
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
       ),
       body: Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          decoration: BoxDecoration(
-            color: Colors.white,
-          ),
-          child: SingleChildScrollView(
-              child: Padding(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        decoration: BoxDecoration(
+          color: Config.primaryColor,
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
             padding: EdgeInsets.fromLTRB(20, 120, 20, 0),
             child: Column(
               children: <Widget>[
                 Padding(
                   padding: const EdgeInsets.all(32.0),
-                  child: 
-                  // Button to upload image
-                  ElevatedButton(
+                  child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white.withOpacity(0.3),
                     ),
@@ -80,52 +94,44 @@ class _ImageEditPageState extends State<ImageEditPage> {
                     child: Text(
                       "Upload Restaurant Image",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                   ),
                 ),
-
-                                  // Display the selected image
                 if (_restaurantImageData != null)
                   Container(
-                    height: 200, // Adjust size as needed
+                    height: 200,
                     width: double.infinity,
                     child: Image.memory(_restaurantImageData!, fit: BoxFit.cover),
-                ),
-                
-                const SizedBox(
-                  height: 20,
-                ),
-
+                  ),
+                const SizedBox(height: 20),
                 ElevatedButton(
-                    onPressed: () {
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 16,
-                      ),
-                      child: Text(
-                        'Confirm',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.white
-                        ),
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Config.primaryColor,
-                      fixedSize: const Size(360, 60),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.zero, // Set to zero for square corners
+                  onPressed: _uploadImage,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    child: Text(
+                      'Confirm',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.white
                       ),
                     ),
                   ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    fixedSize: const Size(360, 60),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero,
+                    ),
+                  ),
+                ),
               ],
             ),
-          ))),
+          ),
+        ),
+      ),
     );
   }
 }

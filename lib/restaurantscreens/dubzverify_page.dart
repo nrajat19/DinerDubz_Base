@@ -31,57 +31,32 @@ class _DubzVerifyPageState extends State<DubzVerifyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Config.primaryColor,
+        elevation: 0,
+        title: const Text(
+          "Verify Customer Dubz Code",
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+      ),
       resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.white,
+      backgroundColor: Config.primaryColor,
       body: Stack(
-        children: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => MainLayout()),
-              );
-            },
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 1,
-                vertical: 1,
-              ),
-              child: Text(
-                '< Back',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.white),
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-            ),
-          ),          
+        children: [          
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Center(
-                  child: Text(
-                    "Verify Customer Dubz Code",
-                    style: TextStyle(
-                      color: Config.primaryColor,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                
-                Config.spaceSmall,
-
-                SizedBox(
+                Container(
                   width: Config.widthSize * 0.5,
                   height: 50,
+                  color: Colors.white,
                   child: DropdownButtonFormField<String>(
                   decoration: InputDecoration(
-                    labelText: "Select Current Dubz",
+                    fillColor: Colors.white,
+                    labelText: "Select Customer Dubz",
                     border: OutlineInputBorder(),
                   ),
                   value: selectedCouponDescription,
@@ -100,18 +75,19 @@ class _DubzVerifyPageState extends State<DubzVerifyPage> {
                 ),
 
                 Config.spaceBig,
+                Config.spaceBig,
 
                 const Center(
                   child: Text(
                     "Please Enter 6-Digit Dubz Code From Customer Side",
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 14,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                Config.spaceMedium,
+                Config.spaceSmall,
                 
                 SizedBox(
                   width: Config.widthSize * 0.5,
@@ -164,12 +140,14 @@ class _DubzVerifyPageState extends State<DubzVerifyPage> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
-                          color: Colors.black
+                          color: Colors.white
                         ),
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Config.primaryColor,
+                      backgroundColor: Colors.black,
+                      fixedSize: const Size(360, 60),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
                     ),
                   ),
                 ),
