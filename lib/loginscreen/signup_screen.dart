@@ -20,7 +20,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
   TextEditingController _userNameTextController = TextEditingController();
   bool isRestaurant = false; // false for Customer, true for Restaurant
   String _errorMessage = '';
-  
+  late RegExp passwordRegExp;
+
+  @override
+  void initState() {
+    super.initState();
+    // Password strength requirements: At least 8 characters, one uppercase letter, one lowercase letter, one digit, and one special character
+    passwordRegExp = RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$');
+  }
+
+  bool isPasswordValid(String password) {
+    return passwordRegExp.hasMatch(password);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,6 +74,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(
                   height: 20,
                 ),
+                //Display following strength requirements below
+                //At least 8 characters
+                //One uppercase
+                //One lowercase
+                //One digit
+                //One special character
+
+                const Text("Password Requirements:" , style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 145, 144, 144)),),
+                const Text("1 Uppercase Character", style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 145, 144, 144)),),
+                const Text("1 Lowercase Character", style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 145, 144, 144)),),
+                const Text("1 Numerical Character", style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 145, 144, 144)),),
+                const Text("1 Special Character", style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 145, 144, 144)),),
 
                 const SizedBox(
                   height: 20,
@@ -81,6 +105,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
 
                 firebaseUIButton(context, "Sign Up", () {
+                  // Validate password strength before creating a new user
+                  if (!isPasswordValid(_passwordTextController.text)) {
+                    setState(() {
+                      _errorMessage = "Password does not meet strength requirements";
+                    });
+                    return;
+                  }
+
                   FirebaseAuth.instance
                       .createUserWithEmailAndPassword(
                           email: _emailTextController.text,

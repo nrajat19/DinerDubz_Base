@@ -15,6 +15,19 @@ class _PassEditPageState extends State<PassEditPage> {
   TextEditingController _newPassTextController = TextEditingController();
   TextEditingController _confirmPassTextController = TextEditingController();
 
+  late RegExp passwordRegExp;
+
+  @override
+  void initState() {
+    super.initState();
+    // Password strength requirements: At least 8 characters, one uppercase letter, one lowercase letter, one digit, and one special character
+    passwordRegExp = RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$');
+  }
+
+  bool isPasswordValid(String password) {
+    return passwordRegExp.hasMatch(password);
+  }
+
   Future<void> updatePassword() async {
   String oldPassword = _oldPassTextController.text;
   String newPassword = _newPassTextController.text;
@@ -22,6 +35,13 @@ class _PassEditPageState extends State<PassEditPage> {
 
   if (newPassword != confirmPassword) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("New passwords do not match")));
+    return;
+  }
+
+
+  // Validate password strength
+  if (!isPasswordValid(newPassword)) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("New password does not meet strength requirements")));
     return;
   }
 
@@ -70,10 +90,25 @@ class _PassEditPageState extends State<PassEditPage> {
               children: <Widget>[
                 reusableTextField("Enter Old Password", Icons.lock, true, _oldPassTextController),
                 const SizedBox(height: 10),
+                //Display following strength requirements below
+                //At least 8 characters
+                //One uppercase
+                //One lowercase
+                //One digit
+                //One special character
                 reusableTextField("Enter New Password", Icons.lock_outline, true, _newPassTextController),
                 const SizedBox(height: 10),
                 reusableTextField("Confirm New Password", Icons.lock_outline, true, _confirmPassTextController),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
+
+                const Text("Password Requirements:" , style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 145, 144, 144)),),
+                const Text("1 Uppercase Character", style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 145, 144, 144)),),
+                const Text("1 Lowercase Character", style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 145, 144, 144)),),
+                const Text("1 Numerical Character", style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 145, 144, 144)),),
+                const Text("1 Special Character", style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 145, 144, 144)),),
+
+                const SizedBox(height: 20),
+
                 ElevatedButton(
                   onPressed: updatePassword,
                   child: Padding(

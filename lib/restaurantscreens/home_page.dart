@@ -17,11 +17,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
-  List<String> chartTabs = ['Line Chart', 'Pie Chart', 'Bar Chart'];
-
-  int _currentIndex = 0;
-  late Timer _timer;
   String? userName;
   double progress = 0.0;
   Map<String, bool> fieldStatus = {
@@ -64,30 +59,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     fetchUserData();
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      setState(() {
-        _currentIndex = (_currentIndex + 1) % 3;
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
-
-  Widget analyticsDisplay() {
-    switch (_currentIndex) {
-      case 0:
-        return PlotLineGraph();
-      case 1:
-        return PlotPieGraph();
-      case 2: 
-        return PlotBarGraph();
-      default:
-        return Container();
-    }
   }
 
   Widget buildSegmentedProgressBar() {
@@ -121,6 +92,93 @@ class _HomePageState extends State<HomePage> {
     });
 
     return Row(children: segments);
+  }
+
+  GestureDetector buildItem(
+     String title, String subTitle, String url, double rating) {
+   return GestureDetector(
+     onTap: () {
+       //Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) => DetailPage(url)));
+     },
+     child: Container(
+       margin: EdgeInsets.symmetric(vertical: 12.0),
+       padding: EdgeInsets.symmetric(horizontal: 25.0),
+       child: Column(
+         children: <Widget>[
+           Hero(
+             tag: url,
+             child: Container(
+               height: 200,
+               decoration: BoxDecoration(
+                   image: DecorationImage(
+                     image: NetworkImage(url),
+                     fit: BoxFit.cover,
+                   ),
+                   borderRadius: BorderRadius.only(
+                     topLeft: Radius.circular(10.0),
+                     topRight: Radius.circular(10.0),
+                   )),
+             ),
+           ),
+           Container(
+             padding: EdgeInsets.all(25.0),
+             decoration: BoxDecoration(
+                 color: Colors.white,
+                 borderRadius: BorderRadius.only(
+                     bottomLeft: Radius.circular(10.0),
+                     bottomRight: Radius.circular(10.0)),
+                 boxShadow: [
+                   BoxShadow(
+                       blurRadius: 2.0, spreadRadius: 1.0, color: Colors.grey)
+                 ]),
+             child: Row(
+               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               children: <Widget>[
+                 Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   mainAxisAlignment: MainAxisAlignment.center,
+                   children: <Widget>[
+                     Text(
+                       title,
+                       style: TextStyle(
+                           fontWeight: FontWeight.bold, fontSize: 16.0),
+                     ),
+                     Text(
+                       subTitle,
+                       style: TextStyle(
+                           fontWeight: FontWeight.bold,
+                           fontSize: 12.0,
+                           color: Colors.grey),
+                     ),
+                   ],
+                 ),
+                 CircleAvatar(
+                   backgroundColor: Colors.orange,
+                   child: Text(
+                     rating.toString(),
+                     style: TextStyle(color: Colors.white),
+                   ),
+                 ),
+               ],
+             ),
+           ),
+         ],
+       ),
+     ),
+   );
+ }
+
+  Future<DocumentSnapshot<Map<String, dynamic>>> fetchRestaurantData() async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+    return FirebaseFirestore.instance.collection('restaurant').doc(userId).get();
+  }
+
+  Widget buildRestaurantCard(Map<String, dynamic> data) {
+    String imageUrl = data['displayImage'] ?? '';
+    String title = data['userName'] ?? 'Restaurant Name';
+    String subTitle = data['cuisineType'].join(', ') ?? 'Cuisine Type';
+
+    return buildItem(title, subTitle, imageUrl, 4.5); // Example rating
   }
 
   @override
@@ -199,17 +257,29 @@ class _HomePageState extends State<HomePage> {
                 ),
 
                 Config.spaceBig,
-                buildSegmentedProgressBar(),
 
-                /** 
-                Center (
-                  child: SizedBox (
-                    width: Config.widthSize * 0.5,
-                    height: Config.heightSize * 0.25,
-                    child: analyticsDisplay(),
-                  ),
+                FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  future: fetchRestaurantData(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    }
+
+                    if (!snapshot.hasData || !snapshot.data!.exists) {
+                      return Text("Restaurant data not found");
+                    }
+
+                    Map<String, dynamic> restaurantData = snapshot.data!.data()!;
+
+                    // Check if setup is complete
+                    if (restaurantData.values.every((v) => v != null && v.toString().isNotEmpty)) {
+                      return buildRestaurantCard(restaurantData);
+                    } else {
+                      return buildSegmentedProgressBar();
+                    }
+                  },
                 ),
-                */
+
                 Config.spaceBig,
 
                 Center(

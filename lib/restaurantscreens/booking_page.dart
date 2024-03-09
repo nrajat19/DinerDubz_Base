@@ -59,18 +59,27 @@ class _BookingPageState extends State<BookingPage> {
       int number = random.nextInt(900000) + 100000; // This will generate a random number between 100000 and 999999
       return number.toString();
   }
+  void displayError(String errorMessage) {
+    // Display error message to the user (e.g., show a snackbar)
+    final snackBar = SnackBar(content: Text(errorMessage));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
 
   void handleSubmit() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     DateTime initDate = DateTime.now();
     
+    if (endDate != null && endDate!.isBefore(startDate!)) {
+      // Show an error message if the end date is earlier than the start date
+      displayError("End date cannot be earlier than start date");
+      return;
+    }
 
     int quantity = int.tryParse(quantityController.text) ?? 0;
     for (int i = 0; i < quantity; i++) {
       // Generate a unique ID for each document
       String uniqueId = generateUniqueId();
-
       // Prepare data for Firestore
       Map<String, dynamic> discountSetData = {
         'description': descriptionController.text,
