@@ -10,11 +10,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: FirebaseOptions(
-      apiKey: "AIzaSyBpHoQDyT7afa7PG_Xn9RgMLMYhZA_HbUE", 
-      appId: "1:733362896359:web:3d5baa13da338a39941142", 
-      messagingSenderId: "733362896359", 
-      projectId: "dubz-restaurant",
-      storageBucket: "gs://dubz-restaurant.appspot.com",
+      apiKey: "AIzaSyC_Nxsf8H4FUaogejr6TmW8eFAnQuKb14c", 
+      appId: "1:218576616234:web:7cc2ff21dc339d9efabc53", 
+      messagingSenderId: "218576616234",
+      projectId: "dinerdubz-main",
+      storageBucket: "dinerdubz-main.appspot.com",
     )
   );
   runApp(MaterialApp(
