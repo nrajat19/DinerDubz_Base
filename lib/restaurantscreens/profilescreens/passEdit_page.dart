@@ -74,7 +74,7 @@ class _PassEditPageState extends State<PassEditPage> {
         elevation: 0,
         title: const Text(
           "Edit Password",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
       body: Container(

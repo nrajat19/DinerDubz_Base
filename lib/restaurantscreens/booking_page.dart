@@ -317,14 +317,25 @@ class _BookingPageState extends State<BookingPage> {
                   height: 50,
                   width: 250,
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Config.primaryColor,
-                    ),
                     onPressed: handleSubmit,
-                    child: const Text(
-                      'Submit Dubz',
-                      style: TextStyle(fontSize: 18, color: Colors.black),
-                    ),                    
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 40),
+                      child: Text(
+                        'Submit Dubz',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      fixedSize: const Size(360, 60),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero,
+                      ),
+                    ),
                   ),
                 ),
               ],

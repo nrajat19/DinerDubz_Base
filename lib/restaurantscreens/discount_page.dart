@@ -1,5 +1,5 @@
-import 'package:dubz_creator/utils/config.dart';
 import 'package:flutter/material.dart';
+import 'package:dubz_creator/utils/config.dart';
 import 'package:intl/intl.dart';
 import 'package:dubz_creator/loginscreen/signin_screen.dart';
 import 'package:dubz_creator/restaurantscreens/profile_page.dart';
@@ -17,7 +17,6 @@ enum FilterStatus { Current, Upcoming, Closed }
 
 class _DiscountPageState extends State<DiscountPage> {
   FilterStatus status = FilterStatus.Current;
-  Alignment _alignment = Alignment.centerLeft;
   String? userName;
 
   Future<void> fetchUserData() async {
@@ -70,148 +69,105 @@ class _DiscountPageState extends State<DiscountPage> {
     return discounts;
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.only(left:20, top: 20, right: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget> [
-            Row(
-                  children: <Widget>[
-                    IconButton(
-                      icon: Icon(Icons.person_outline),
-                      onPressed: () {
-                        // Navigate to another page when the person_outline button is pressed
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => ProfilePage()),
-                        );
-                      },
-                    ),
-                    Text(
-                      userName ?? "",
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Spacer(),
-                    ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Config.primaryColor,
-                    ),
-                    child: const Text(
-                      'Logout',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (context) => SignInScreen()),
-                      );                  
-                    },
-                  ),
-
-                  ],
-                ),
-            Config.spaceMedium,
-
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Discount Schedule', style: TextStyle(color: Colors.white)), // Add title at top center
+          automaticallyImplyLeading: false, // Remove back arrow
+          actions: [
+            IconButton(
+              icon: Icon(Icons.person_outline),
+              onPressed: () {
+                // Navigate to another page when the person_outline button is pressed
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ProfilePage()),
+                );
+              },
+            ),
             Text(
-              "Discount Schedule",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 24,
+              userName ?? "",
+              style: const TextStyle(
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Config.spaceSmall,
-            Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+            Spacer(),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Config.primaryColor, // Config.primaryColor,
+              ),
+              child: const Text(
+                'Logout',
+                style: TextStyle(color: Colors.white),
+              ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => SignInScreen(),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      for (FilterStatus filterStatus in FilterStatus.values)
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (filterStatus == FilterStatus.Current) {
-                                  status = FilterStatus.Current;
-                                  _alignment = Alignment.centerLeft;
-                                } else if(filterStatus == FilterStatus.Upcoming) {
-                                  status = FilterStatus.Upcoming;
-                                  _alignment = Alignment.center;                                  
-                                } else if(filterStatus == FilterStatus.Closed) {
-                                  status = FilterStatus.Closed;
-                                  _alignment = Alignment.centerRight;                                  
-                                }
-                              });
-                            },
-                            child: Center(
-                              child: Text(filterStatus.name),
-                            ),
-
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
+                );
+              },
             ),
-            Config.spaceMedium,
-
-            FutureBuilder<List<Map<String, dynamic>>>(
-            future: fetchDiscounts(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              }
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Text('No discounts found');
-              }
-
-              // Filter data based on the current status
-              List<Map<String, dynamic>> filteredDiscounts = filterDiscounts(snapshot.data!);
-
-              return Expanded(
-                child: ListView.builder(
-                  itemCount: filteredDiscounts.length,
-                  itemBuilder: (context, index) {
-                    Map<String, dynamic> discount = filteredDiscounts[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: ScheduleCard(
-                        discountData: discount,
-                        totalCoupons: discount['totalCoupons'],
-                        usedCoupons: discount['usedCoupons']
-                      ),
-                    );  
-                  },
-                ),
-              );
-            },
+          ],
+          bottom: TabBar(
+            tabs: [
+              Tab(text: 'Current'),
+              Tab(text: 'Upcoming'),
+              Tab(text: 'Closed'),
+            ],
           ),
-
+        ),
+        body: TabBarView(
+          children: [
+            _buildDiscountList(FilterStatus.Current),
+            _buildDiscountList(FilterStatus.Upcoming),
+            _buildDiscountList(FilterStatus.Closed),
           ],
         ),
       ),
     );
   }
 
-  List<Map<String, dynamic>> filterDiscounts(List<Map<String, dynamic>> discounts) {
+  Widget _buildDiscountList(FilterStatus filterStatus) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: fetchDiscounts(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No discounts found'));
+        }
+
+        // Filter data based on the current status
+        List<Map<String, dynamic>> filteredDiscounts = filterDiscounts(snapshot.data!, filterStatus);
+
+        return ListView.builder(
+          itemCount: filteredDiscounts.length,
+          itemBuilder: (context, index) {
+            Map<String, dynamic> discount = filteredDiscounts[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: ScheduleCard(
+                discountData: discount,
+                totalCoupons: discount['totalCoupons'],
+                usedCoupons: discount['usedCoupons'],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  List<Map<String, dynamic>> filterDiscounts(List<Map<String, dynamic>> discounts, FilterStatus filterStatus) {
     DateTime now = DateTime.now();
 
-    switch (status) {
+    switch (filterStatus) {
       case FilterStatus.Current:
         return discounts.where((discount) {
           DateTime startDate = discount['startDate'].toDate();
@@ -234,10 +190,7 @@ class _DiscountPageState extends State<DiscountPage> {
         return discounts;
     }
   }
-
-
 }
- 
 
 class ScheduleCard extends StatelessWidget {
   final Map<String, dynamic> discountData;
@@ -245,15 +198,14 @@ class ScheduleCard extends StatelessWidget {
   final int usedCoupons;
 
   const ScheduleCard({
-      Key? key,
-      required this.discountData,
-      required this.totalCoupons,
-      required this.usedCoupons
-    }) : super(key: key);
+    Key? key,
+    required this.discountData,
+    required this.totalCoupons,
+    required this.usedCoupons,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    int remainingCoupons = totalCoupons - usedCoupons;
     // Format the dates
     String startDate = discountData['startDate'] != null
         ? DateFormat('MM/dd/yyyy HH:mm').format(discountData['startDate'].toDate())
@@ -298,7 +250,6 @@ class ScheduleCard extends StatelessWidget {
         ],
       ),
     );
-
   }
 }
 
@@ -342,5 +293,3 @@ class CouponProgressBar extends StatelessWidget {
     );
   }
 }
-
-

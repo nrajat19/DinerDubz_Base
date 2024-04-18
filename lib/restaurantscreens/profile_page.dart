@@ -36,7 +36,8 @@ class _ProfilePageState extends State<ProfilePage> {
         elevation: 0,
         title: const Text(
           "Customize Profile",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+          
         ),
       ),
       body: Container(

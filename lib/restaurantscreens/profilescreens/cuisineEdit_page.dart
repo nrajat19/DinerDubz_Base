@@ -53,7 +53,7 @@ class _CuisineEditPageState extends State<CuisineEditPage> {
         elevation: 0,
         title: const Text(
           "Edit Restaurant Cuisines",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
       body: Container(

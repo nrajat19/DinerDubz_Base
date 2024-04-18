@@ -7,6 +7,12 @@ import 'package:dubz_creator/restaurantscreens/dubzverify_page.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dubz_creator/restaurantscreens/profilescreens/nameEdit_page.dart';
+import 'package:dubz_creator/restaurantscreens/profilescreens/passEdit_page.dart';
+import 'package:dubz_creator/restaurantscreens/profilescreens/addressEdit_page.dart';
+import 'package:dubz_creator/restaurantscreens/profilescreens/numberEdit_page.dart';
+import 'package:dubz_creator/restaurantscreens/profilescreens/cuisineEdit_page.dart';
+import 'package:dubz_creator/restaurantscreens/profilescreens/imageEdit_page.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -64,11 +70,53 @@ class _HomePageState extends State<HomePage> {
   Widget buildSegmentedProgressBar() {
     List<Widget> segments = [];
     fieldStatus.forEach((key, value) {
-      segments.add(
-        Expanded(
-          child: Column(
-            children: [
-              Container(
+      Widget segment = Expanded(
+        child: Column(
+          children: [
+            TextButton(
+              onPressed: () {
+                // Navigate to different profile pages based on the key
+                switch (key) {
+                  case 'email':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => NameEditPage()),
+                    );
+                    break;
+                  case 'userName':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => NameEditPage()),
+                    );
+                    break;
+                  case 'address':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => AddressEditPage()),
+                    );
+                    break;
+                  case 'phoneNumber':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => NumberEditPage()),
+                    );
+                    break;  
+                  case 'cuisineType':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => CuisineEditPage()),
+                    );
+                    break;
+                  case 'displayImage':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ImageEditPage()),
+                    );
+                    break;
+                  // Add cases for other keys here
+                }
+              },
+              child: Container(
                 height: 10,
                 margin: const EdgeInsets.symmetric(horizontal: 2),
                 decoration: BoxDecoration(
@@ -76,23 +124,26 @@ class _HomePageState extends State<HomePage> {
                   borderRadius: BorderRadius.circular(5),
                 ),
               ),
-              SizedBox(height: 5), // Spacing between bar and label
-              Text(
-                key, // Field name as label
-                style: TextStyle(
-                  fontSize: 12,
-                  color: value ? Colors.black : Colors.grey[600],
-                ),
-                overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 5), // Spacing between bar and label
+            Text(
+              key, // Field name as label
+              style: TextStyle(
+                fontSize: 12,
+                color: value ? Colors.black : Colors.grey[600],
               ),
-            ],
-          ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       );
+
+      segments.add(segment);
     });
 
     return Row(children: segments);
   }
+
 
   GestureDetector buildItem(
      String title, String subTitle, String url, double rating) {
@@ -151,14 +202,7 @@ class _HomePageState extends State<HomePage> {
                            color: Colors.grey),
                      ),
                    ],
-                 ),
-                 CircleAvatar(
-                   backgroundColor: Colors.orange,
-                   child: Text(
-                     rating.toString(),
-                     style: TextStyle(color: Colors.white),
-                   ),
-                 ),
+                 ), 
                ],
              ),
            ),
@@ -281,26 +325,39 @@ class _HomePageState extends State<HomePage> {
                 ),
 
                 Config.spaceBig,
+                Config.spaceBig,
 
                 Center(
                   child: SizedBox(
                     height: 50,
                     width: 250,
-                    child:ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Config.primaryColor,
+                    child: ElevatedButton(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 40),
+                        child: Text(
+                          'Verify Dubz',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
-                      child: const Text(
-                        'Verify Customer',
-                        style: TextStyle(fontSize: 18, color: Colors.black),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        fixedSize: const Size(360, 60),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.zero,
+                        ),
                       ),
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                               builder: (context) => DubzVerifyPage()),
-                        );                  
-                      },
+                        );
+                      }
                     ),
+
                   ),
                 ),
               ],

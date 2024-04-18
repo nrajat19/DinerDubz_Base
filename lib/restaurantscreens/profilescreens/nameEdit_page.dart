@@ -45,7 +45,7 @@ class _NameEditPageState extends State<NameEditPage> {
         elevation: 0,
         title: const Text(
           "Edit Restaurant Name",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
       body: Container(
